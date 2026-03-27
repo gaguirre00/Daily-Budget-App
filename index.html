@@ -60,10 +60,14 @@
     .history-count { font-size: 14px; color: var(--muted); }
     .history-list { display: grid; gap: 8px; }
     .history-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--soft); border-radius: 18px; padding: 14px 16px; }
+    .history-left { display: flex; align-items: center; gap: 10px; }
     .history-day { font-size: 15px; font-weight: 600; }
     .history-sub { margin-top: 2px; font-size: 12px; color: var(--muted); }
     .history-spent { font-size: 15px; font-weight: 700; text-align: right; }
     .history-diff { margin-top: 2px; font-size: 12px; color: var(--muted); text-align: right; }
+    .impact-badge { min-width: 64px; border-radius: 12px; padding: 6px 8px; text-align: center; font-size: 12px; font-weight: 700; }
+    .impact-badge.positive { background: #d1fae5; color: #047857; }
+    .impact-badge.negative { background: #ffe4e6; color: #be123c; }
   </style>
 </head>
 <body>
@@ -138,7 +142,7 @@
   <script>
     const TOTAL_BUDGET = 100;
     const TOTAL_DAYS = 14;
-    const STORAGE_KEY = "budget-randomizer-v7";
+    const STORAGE_KEY = "budget-randomizer-v10";
 
     function createInitialState() {
       return {
@@ -203,6 +207,13 @@
       return day.entries.reduce((sum, entry) => sum + entry, 0);
     }
 
+    function dayImpactFromPrevious(index) {
+      if (index <= 0) return null;
+      const previousDay = state.days[index - 1];
+      if (!previousDay || typeof previousDay.suggested !== "number") return null;
+      return Number((previousDay.suggested - daySpent(previousDay)).toFixed(2));
+    }
+
     function getTotals() {
       const spentSoFar = state.days.reduce((sum, d) => sum + daySpent(d), 0);
       return {
@@ -219,21 +230,22 @@
 
     function calculateSuggestion(index) {
       const spentBefore = state.days.slice(0, index).reduce((sum, d) => sum + daySpent(d), 0);
-      const suggestedBefore = state.days.slice(0, index).reduce((sum, d) => sum + (typeof d.suggested === "number" ? d.suggested : 0), 0);
-
       const remainingBudget = Math.max(0, TOTAL_BUDGET - spentBefore);
       const remainingDays = TOTAL_DAYS - index;
       if (remainingDays <= 0) return null;
 
-      const carryover = Math.max(0, suggestedBefore - spentBefore);
-      const safeAverage = remainingBudget / remainingDays;
-      const min = Math.max(0, safeAverage * 0.45 + carryover * 0.2);
-      const max = Math.max(min, Math.min(remainingBudget, safeAverage * 1.05 + carryover));
+      const exactCarry = index > 0 ? (dayImpactFromPrevious(index) || 0) : 0;
+      const avgForThisDay = remainingBudget / remainingDays;
+
+      const baseMin = Math.max(0.5, avgForThisDay * 0.35);
+      const baseMax = Math.max(baseMin, avgForThisDay * 0.95);
 
       const r = Math.random() ** 2;
-      let suggestion = min + (max - min) * r;
-      const reserveForFuture = remainingDays > 1 ? (remainingDays - 1) * 0.5 : 0;
-      suggestion = Math.min(suggestion, Math.max(0, remainingBudget - reserveForFuture));
+      const baseRoll = baseMin + (baseMax - baseMin) * r;
+
+      let suggestion = baseRoll + exactCarry;
+      if (suggestion < 0) suggestion = 0;
+      if (suggestion > remainingBudget) suggestion = remainingBudget;
 
       return Number(suggestion.toFixed(2));
     }
@@ -302,7 +314,7 @@
       const day = currentDay();
       if (!day || day.suggested == null) return;
       day.locked = true;
-      state.currentIndex = Math.min(state.currentIndex + 1, TOTAL_DAYS);
+      state.currentIndex = state.currentIndex + 1;
       spendDraft = "";
       saveState();
       render();
@@ -334,8 +346,8 @@
           : `${currency(Math.abs(diff))} over budget.`;
       } else {
         main.textContent = diff >= 0
-          ? `${currency(diff)} will carry into Day ${day.day + 1}.`
-          : `${currency(Math.abs(diff))} will be taken out of Day ${day.day + 1}.`;
+          ? `${currency(diff)} will be added directly to Day ${day.day + 1}.`
+          : `${currency(Math.abs(diff))} will be subtracted directly from Day ${day.day + 1}.`;
       }
 
       detail.textContent = diff >= 0
@@ -363,19 +375,36 @@
     function renderHistory() {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
-      state.days.forEach((d) => {
+      state.days.forEach((d, index) => {
+        const impact = dayImpactFromPrevious(index);
         const item = document.createElement("div");
         item.className = "history-item";
-        item.innerHTML = `
-          <div>
-            <div class="history-day">Day ${d.day}</div>
-            <div class="history-sub">${d.suggested == null ? "No number yet" : `Max ${currency(d.suggested)} • ${d.entries.length} entries`}</div>
-          </div>
-          <div>
-            <div class="history-spent">${d.entries.length === 0 ? "—" : currency(daySpent(d))}</div>
-            <div class="history-diff">${dayStatus(d)}</div>
-          </div>
+
+        const left = document.createElement("div");
+        left.className = "history-left";
+
+        if (impact != null) {
+          const badge = document.createElement("div");
+          badge.className = `impact-badge ${impact >= 0 ? "positive" : "negative"}`;
+          badge.textContent = `${impact >= 0 ? "+" : "-"}${currency(Math.abs(impact))}`;
+          left.appendChild(badge);
+        }
+
+        const textWrap = document.createElement("div");
+        textWrap.innerHTML = `
+          <div class="history-day">Day ${d.day}</div>
+          <div class="history-sub">${d.suggested == null ? "No number yet" : `Max ${currency(d.suggested)} • ${d.entries.length} entries`}</div>
         `;
+        left.appendChild(textWrap);
+
+        const right = document.createElement("div");
+        right.innerHTML = `
+          <div class="history-spent">${d.entries.length === 0 ? "—" : currency(daySpent(d))}</div>
+          <div class="history-diff">${dayStatus(d)}</div>
+        `;
+
+        item.appendChild(left);
+        item.appendChild(right);
         historyList.appendChild(item);
       });
     }
