@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Budget Randomizer</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --dark: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --soft: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--dark); }
+    .app { max-width: 430px; margin: 0 auto; min-height: 100vh; padding: 16px; }
+    .card { background: var(--card); border-radius: 28px; padding: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); margin-bottom: 16px; }
+    .hero { background: var(--dark); color: white; border: none; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18); }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; color: #cbd5e1; }
+    h1, h2, p { margin: 0; }
+    h1 { margin-top: 8px; font-size: 28px; line-height: 1.1; }
+    .subtext { margin-top: 10px; font-size: 14px; color: #cbd5e1; line-height: 1.4; }
+    .date-chip { margin-top: 14px; display: inline-block; background: rgba(255,255,255,0.12); color: white; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .stats { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 14px; }
+    .stat-label { font-size: 12px; color: #cbd5e1; }
+    .stat-value { margin-top: 4px; font-size: 28px; font-weight: 700; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .today-title { font-size: 14px; color: var(--muted); }
+    .today-day { margin-top: 4px; font-size: 24px; font-weight: 700; }
+    button { border: none; border-radius: 18px; padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .primary { background: var(--dark); color: white; }
+    .secondary { background: white; color: #334155; border: 1px solid #cbd5e1; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .amount-box { margin-top: 18px; background: var(--soft); border-radius: 24px; padding: 18px; text-align: center; }
+    .amount-label { font-size: 14px; color: var(--muted); }
+    .amount { margin-top: 8px; font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; transition: transform 120ms ease; min-height: 56px; }
+    .amount.rolling { transform: scale(1.05); }
+    .helper { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
+    .impact-box { margin-top: 12px; padding: 12px; border-radius: 18px; }
+    .impact-box.positive { background: #ecfdf5; }
+    .impact-box.negative { background: #fff1f2; }
+    .impact-title { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+    .impact-main { margin-top: 4px; font-size: 14px; font-weight: 700; }
+    .impact-box.positive .impact-main { color: #047857; }
+    .impact-box.negative .impact-main { color: #be123c; }
+    .impact-detail { margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .entry-box { margin-top: 12px; padding: 12px; background: var(--soft); border-radius: 18px; }
+    .entry-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-top: 6px; }
+    label { display: block; margin-top: 18px; font-size: 14px; color: var(--muted); }
+    input { width: 100%; margin-top: 8px; padding: 16px; border-radius: 18px; border: 1px solid #cbd5e1; font-size: 18px; background: white; }
+    .submit-btn { margin-top: 12px; width: 100%; }
+    .grid-two { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mini-box { background: var(--soft); border-radius: 20px; padding: 14px; }
+    .mini-label { font-size: 12px; color: var(--muted); }
+    .mini-value { margin-top: 4px; font-size: 24px; font-weight: 700; }
+    .history-header { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .history-count { font-size: 14px; color: var(--muted); }
+    .history-list { display: grid; gap: 8px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--soft); border-radius: 18px; padding: 14px 16px; }
+    .history-day { font-size: 15px; font-weight: 600; }
+    .history-sub { margin-top: 2px; font-size: 12px; color: var(--muted); }
+    .history-spent { font-size: 15px; font-weight: 700; text-align: right; }
+    .history-diff { margin-top: 2px; font-size: 12px; color: var(--muted); text-align: right; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="card hero">
+      <div class="eyebrow">14-day budget</div>
+      <h1>Budget Randomizer</h1>
+      <p class="subtext">Add multiple purchases per day. Overspending today automatically lowers the next roll.</p>
+      <div class="date-chip" id="todayDate">Today</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value" id="remaining">$100.00</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Days left</div>
+          <div class="stat-value" id="daysLeft">14</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <div>
+          <div class="today-title">Current budget day</div>
+          <div class="today-day" id="todayDay">Day 1</div>
+        </div>
+        <button class="primary" id="randomizeBtn">Randomize</button>
+      </div>
+
+      <div class="amount-box">
+        <div class="amount-label">Suggested max</div>
+        <div class="amount" id="suggestedAmount">—</div>
+        <div class="helper" id="rollStatus">Tap randomize to get today’s budget.</div>
+      </div>
+
+      <div class="impact-box positive" id="impactBox" style="display:none;">
+        <div class="impact-title">Next day impact</div>
+        <div class="impact-main" id="impactMain"></div>
+        <div class="impact-detail" id="impactDetail"></div>
+      </div>
+
+      <label for="actualSpent">Add a purchase for this day</label>
+      <input id="actualSpent" type="text" inputmode="decimal" placeholder="0.00" />
+      <button class="primary submit-btn" id="submitSpentBtn">Add $ entry</button>
+
+      <div class="entry-box" id="entryBox" style="display:none;">
+        <div class="mini-label">Today’s entries</div>
+        <div id="entriesList"></div>
+      </div>
+
+      <button class="secondary submit-btn" id="finishDayBtn">Finish day and move on</button>
+
+      <div class="grid-two">
+        <div class="mini-box">
+          <div class="mini-label">Spent so far</div>
+          <div class="mini-value" id="spentSoFar">$0.00</div>
+        </div>
+        <button class="secondary" id="resetBtn">Reset all</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="history-header">
+        <h2>History</h2>
+        <div class="history-count" id="historyCount">0/14</div>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+  </div>
+
+  <script>
+    const TOTAL_BUDGET = 100;
+    const TOTAL_DAYS = 14;
+    const STORAGE_KEY = "budget-randomizer-v7";
+
+    function createInitialState() {
+      return {
+        currentIndex: 0,
+        days: Array.from({ length: TOTAL_DAYS }, (_, i) => ({
+          day: i + 1,
+          suggested: null,
+          entries: [],
+          locked: false
+        }))
+      };
+    }
+
+    function todayKey() {
+      const now = new Date();
+      return now.toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function currency(n) {
+      return `$${Number(n).toFixed(2)}`;
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return createInitialState();
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.days)) return createInitialState();
+        return {
+          currentIndex: typeof parsed.currentIndex === "number" ? parsed.currentIndex : 0,
+          days: Array.from({ length: TOTAL_DAYS }, (_, i) => {
+            const d = parsed.days[i] || {};
+            return {
+              day: i + 1,
+              suggested: typeof d.suggested === "number" ? d.suggested : null,
+              entries: Array.isArray(d.entries) ? d.entries : [],
+              locked: !!d.locked
+            };
+          })
+        };
+      } catch {
+        return createInitialState();
+      }
+    }
+
+    let state = loadState();
+    let isRolling = false;
+    let rollInterval = null;
+    let rollTimeout = null;
+    let spendDraft = "";
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function daySpent(day) {
+      return day.entries.reduce((sum, entry) => sum + entry, 0);
+    }
+
+    function getTotals() {
+      const spentSoFar = state.days.reduce((sum, d) => sum + daySpent(d), 0);
+      return {
+        spentSoFar,
+        remaining: Math.max(0, TOTAL_BUDGET - spentSoFar),
+        completedDays: state.days.filter(d => d.locked).length,
+        daysLeft: TOTAL_DAYS - state.days.filter(d => d.locked).length
+      };
+    }
+
+    function currentDay() {
+      return state.currentIndex < TOTAL_DAYS ? state.days[state.currentIndex] : null;
+    }
+
+    function calculateSuggestion(index) {
+      const spentBefore = state.days.slice(0, index).reduce((sum, d) => sum + daySpent(d), 0);
+      const suggestedBefore = state.days.slice(0, index).reduce((sum, d) => sum + (typeof d.suggested === "number" ? d.suggested : 0), 0);
+
+      const remainingBudget = Math.max(0, TOTAL_BUDGET - spentBefore);
+      const remainingDays = TOTAL_DAYS - index;
+      if (remainingDays <= 0) return null;
+
+      const carryover = Math.max(0, suggestedBefore - spentBefore);
+      const safeAverage = remainingBudget / remainingDays;
+      const min = Math.max(0, safeAverage * 0.45 + carryover * 0.2);
+      const max = Math.max(min, Math.min(remainingBudget, safeAverage * 1.05 + carryover));
+
+      const r = Math.random() ** 2;
+      let suggestion = min + (max - min) * r;
+      const reserveForFuture = remainingDays > 1 ? (remainingDays - 1) * 0.5 : 0;
+      suggestion = Math.min(suggestion, Math.max(0, remainingBudget - reserveForFuture));
+
+      return Number(suggestion.toFixed(2));
+    }
+
+    function updateRollVisual(amount, rolling) {
+      const suggestedAmount = document.getElementById("suggestedAmount");
+      const rollStatus = document.getElementById("rollStatus");
+      suggestedAmount.textContent = amount == null ? "—" : currency(amount);
+      suggestedAmount.classList.toggle("rolling", rolling);
+
+      const day = currentDay();
+      if (rolling) {
+        rollStatus.textContent = "Rolling...";
+      } else if (day && day.suggested != null) {
+        rollStatus.textContent = `Spent today: ${currency(daySpent(day))}`;
+      } else {
+        rollStatus.textContent = "Tap randomize to get today’s budget.";
+      }
+    }
+
+    function startRollAnimation() {
+      const index = state.currentIndex;
+      const day = currentDay();
+      if (!day || day.suggested != null || isRolling) return;
+
+      const suggestion = calculateSuggestion(index);
+      if (suggestion == null) return;
+
+      isRolling = true;
+      updateRollVisual(null, true);
+      render();
+
+      rollInterval = setInterval(() => {
+        const previewMin = Math.max(0, suggestion * 0.45);
+        const previewMax = Math.max(previewMin + 0.25, suggestion * 1.35);
+        const preview = Number((previewMin + Math.random() * (previewMax - previewMin)).toFixed(2));
+        updateRollVisual(preview, true);
+      }, 70);
+
+      rollTimeout = setTimeout(() => {
+        clearInterval(rollInterval);
+        rollInterval = null;
+        state.days[index].suggested = suggestion;
+        saveState();
+        isRolling = false;
+        updateRollVisual(suggestion, false);
+        render();
+      }, 1100);
+    }
+
+    function submitSpent() {
+      const day = currentDay();
+      if (!day || spendDraft === "" || day.suggested == null) return;
+      const normalized = spendDraft.trim();
+      if (!/^\d*(\.\d{0,2})?$/.test(normalized) || normalized === ".") return;
+      const num = Number(normalized);
+      if (Number.isNaN(num) || num < 0) return;
+
+      day.entries.push(Number(num.toFixed(2)));
+      spendDraft = "";
+      saveState();
+      render();
+    }
+
+    function finishDay() {
+      const day = currentDay();
+      if (!day || day.suggested == null) return;
+      day.locked = true;
+      state.currentIndex = Math.min(state.currentIndex + 1, TOTAL_DAYS);
+      spendDraft = "";
+      saveState();
+      render();
+    }
+
+    function dayStatus(d) {
+      if (typeof d.suggested !== "number") return "Pending";
+      const diff = d.suggested - daySpent(d);
+      return diff >= 0 ? `+${currency(diff)}` : `-${currency(Math.abs(diff))}`;
+    }
+
+    function renderImpact(day) {
+      const box = document.getElementById("impactBox");
+      const main = document.getElementById("impactMain");
+      const detail = document.getElementById("impactDetail");
+
+      if (!day || typeof day.suggested !== "number") {
+        box.style.display = "none";
+        return;
+      }
+
+      const diff = Number((day.suggested - daySpent(day)).toFixed(2));
+      box.style.display = "block";
+      box.className = `impact-box ${diff >= 0 ? "positive" : "negative"}`;
+
+      if (state.currentIndex >= TOTAL_DAYS - 1) {
+        main.textContent = diff >= 0
+          ? `${currency(diff)} stays in your budget.`
+          : `${currency(Math.abs(diff))} over budget.`;
+      } else {
+        main.textContent = diff >= 0
+          ? `${currency(diff)} will carry into Day ${day.day + 1}.`
+          : `${currency(Math.abs(diff))} will be taken out of Day ${day.day + 1}.`;
+      }
+
+      detail.textContent = diff >= 0
+        ? `Suggested ${currency(day.suggested)} minus spent ${currency(daySpent(day))}.`
+        : `Spent ${currency(daySpent(day))} minus suggested ${currency(day.suggested)}.`;
+    }
+
+    function renderEntries(day) {
+      const box = document.getElementById("entryBox");
+      const list = document.getElementById("entriesList");
+      list.innerHTML = "";
+      if (!day || day.entries.length === 0) {
+        box.style.display = "none";
+        return;
+      }
+      box.style.display = "block";
+      day.entries.forEach((entry, idx) => {
+        const row = document.createElement("div");
+        row.className = "entry-row";
+        row.innerHTML = `<span>Purchase ${idx + 1}</span><strong>${currency(entry)}</strong>`;
+        list.appendChild(row);
+      });
+    }
+
+    function renderHistory() {
+      const historyList = document.getElementById("historyList");
+      historyList.innerHTML = "";
+      state.days.forEach((d) => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.innerHTML = `
+          <div>
+            <div class="history-day">Day ${d.day}</div>
+            <div class="history-sub">${d.suggested == null ? "No number yet" : `Max ${currency(d.suggested)} • ${d.entries.length} entries`}</div>
+          </div>
+          <div>
+            <div class="history-spent">${d.entries.length === 0 ? "—" : currency(daySpent(d))}</div>
+            <div class="history-diff">${dayStatus(d)}</div>
+          </div>
+        `;
+        historyList.appendChild(item);
+      });
+    }
+
+    function render() {
+      const totals = getTotals();
+      const day = currentDay();
+
+      document.getElementById("todayDate").textContent = todayKey();
+      document.getElementById("remaining").textContent = currency(totals.remaining);
+      document.getElementById("daysLeft").textContent = totals.daysLeft;
+      document.getElementById("spentSoFar").textContent = currency(totals.spentSoFar);
+      document.getElementById("historyCount").textContent = `${totals.completedDays}/${TOTAL_DAYS}`;
+
+      document.getElementById("todayDay").textContent = day ? `Day ${day.day}` : "Finished";
+
+      const input = document.getElementById("actualSpent");
+      const addBtn = document.getElementById("submitSpentBtn");
+      const randomizeBtn = document.getElementById("randomizeBtn");
+      const finishBtn = document.getElementById("finishDayBtn");
+
+      if (day) {
+        input.disabled = false;
+        input.value = spendDraft;
+        addBtn.disabled = spendDraft === "" || isRolling || day.suggested == null;
+        finishBtn.disabled = day.suggested == null || isRolling;
+        randomizeBtn.disabled = isRolling || day.suggested != null;
+        randomizeBtn.textContent = day.suggested == null ? "Randomize" : "Rolled";
+        if (!isRolling) updateRollVisual(day.suggested, false);
+        renderImpact(day);
+        renderEntries(day);
+      } else {
+        input.disabled = true;
+        input.value = "";
+        addBtn.disabled = true;
+        finishBtn.disabled = true;
+        randomizeBtn.disabled = true;
+        document.getElementById("suggestedAmount").textContent = "—";
+        document.getElementById("rollStatus").textContent = "All 14 days are complete.";
+        document.getElementById("entryBox").style.display = "none";
+        document.getElementById("impactBox").style.display = "none";
+      }
+
+      renderHistory();
+    }
+
+    document.getElementById("actualSpent").addEventListener("input", (e) => {
+      const value = e.target.value.replace(/,/g, ".");
+      if (/^\d*(\.\d{0,2})?$/.test(value) || value === "") {
+        spendDraft = value;
+      } else {
+        e.target.value = spendDraft;
+        return;
+      }
+      document.getElementById("submitSpentBtn").disabled = spendDraft === "" || isRolling;
+    });
+
+    document.getElementById("actualSpent").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submitSpent();
+    });
+
+    document.getElementById("submitSpentBtn").addEventListener("click", submitSpent);
+    document.getElementById("randomizeBtn").addEventListener("click", startRollAnimation);
+    document.getElementById("finishDayBtn").addEventListener("click", finishDay);
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      state = createInitialState();
+      spendDraft = "";
+      isRolling = false;
+      if (rollInterval) clearInterval(rollInterval);
+      if (rollTimeout) clearTimeout(rollTimeout);
+      saveState();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
