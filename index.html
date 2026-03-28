@@ -39,14 +39,13 @@
     .amount { margin-top: 8px; font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; transition: transform 120ms ease; min-height: 56px; }
     .amount.rolling { transform: scale(1.05); }
     .helper { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
-    .impact-box { margin-top: 12px; padding: 12px; border-radius: 18px; }
-    .impact-box.positive { background: #ecfdf5; }
-    .impact-box.negative { background: #fff1f2; }
-    .impact-title { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-    .impact-main { margin-top: 4px; font-size: 14px; font-weight: 700; }
-    .impact-box.positive .impact-main { color: #047857; }
-    .impact-box.negative .impact-main { color: #be123c; }
-    .impact-detail { margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.4; }
+    .breakdown-box { margin-top: 12px; padding: 12px; border-radius: 18px; background: var(--soft); }
+    .history-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .history-total { font-size: 15px; font-weight: 700; text-align: right; }
+    .history-subgrid { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .history-chip { border-radius: 14px; padding: 8px 10px; background: white; }
+    .history-chip-label { font-size: 11px; color: var(--muted); }
+    .history-chip-value { margin-top: 2px; font-size: 13px; font-weight: 700; }
     .entry-box { margin-top: 12px; padding: 12px; background: var(--soft); border-radius: 18px; }
     .entry-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-top: 6px; }
     label { display: block; margin-top: 18px; font-size: 14px; color: var(--muted); }
@@ -75,7 +74,7 @@
     <section class="card hero">
       <div class="eyebrow">14-day budget</div>
       <h1>Budget Randomizer</h1>
-      <p class="subtext">Runs down by Day 14. Spending lowers the next roll. Not spending gives a small bump.</p>
+      <p class="subtext">Fresh random roll every day, plus separate carryover from yesterday. Guided to around $50 by Day 7 and near $100 by Day 11–12.</p>
       <div class="date-chip" id="todayDate">Today</div>
       <div class="stats">
         <div class="stat">
@@ -99,15 +98,16 @@
       </div>
 
       <div class="amount-box">
-        <div class="amount-label">Suggested max</div>
+        <div class="amount-label">Today's total available</div>
         <div class="amount" id="suggestedAmount">—</div>
         <div class="helper" id="rollStatus">Tap randomize to get today’s budget.</div>
       </div>
 
-      <div class="impact-box positive" id="impactBox" style="display:none;">
-        <div class="impact-title">Next day effect</div>
-        <div class="impact-main" id="impactMain"></div>
-        <div class="impact-detail" id="impactDetail"></div>
+      <div class="breakdown-box" id="breakdownBox" style="display:none;">
+        <div class="mini-label">Today breakdown</div>
+        <div class="entry-row"><span>Fresh roll</span><strong id="freshRollText">$0.00</strong></div>
+        <div class="entry-row"><span>Carryover from yesterday</span><strong id="carryoverText">$0.00</strong></div>
+        <div class="entry-row"><span>Total available</span><strong id="totalAvailableText">$0.00</strong></div>
       </div>
 
       <label for="actualSpent">Add a purchase for this day</label>
@@ -126,8 +126,13 @@
           <div class="mini-label">Spent so far</div>
           <div class="mini-value" id="spentSoFar">$0.00</div>
         </div>
-        <button class="secondary" id="resetBtn">Reset all</button>
+        <div class="mini-box">
+          <div class="mini-label">Progress target</div>
+          <div class="mini-value" id="targetText">$0.00</div>
+        </div>
       </div>
+
+      <button class="secondary submit-btn" id="resetBtn">Reset all</button>
     </section>
 
     <section class="card">
@@ -142,13 +147,15 @@
   <script>
     const TOTAL_BUDGET = 100;
     const TOTAL_DAYS = 14;
-    const STORAGE_KEY = "budget-randomizer-v11";
+    const STORAGE_KEY = "budget-randomizer-v12";
 
     function createInitialState() {
       return {
         currentIndex: 0,
         days: Array.from({ length: TOTAL_DAYS }, (_, i) => ({
           day: i + 1,
+          freshRoll: null,
+          carryover: 0,
           suggested: null,
           entries: [],
           locked: false
@@ -182,6 +189,8 @@
             const d = parsed.days[i] || {};
             return {
               day: i + 1,
+              freshRoll: typeof d.freshRoll === "number" ? d.freshRoll : null,
+              carryover: typeof d.carryover === "number" ? d.carryover : 0,
               suggested: typeof d.suggested === "number" ? d.suggested : null,
               entries: Array.isArray(d.entries) ? d.entries : [],
               locked: !!d.locked
@@ -207,14 +216,11 @@
       return day.entries.reduce((sum, entry) => sum + entry, 0);
     }
 
-    function dayDiff(day) {
-      if (!day || typeof day.suggested !== "number") return null;
-      return Number((day.suggested - daySpent(day)).toFixed(2));
-    }
-
     function dayImpactFromPrevious(index) {
       if (index <= 0) return null;
-      return dayDiff(state.days[index - 1]);
+      const previousDay = state.days[index - 1];
+      if (!previousDay || typeof previousDay.suggested !== "number") return null;
+      return Number((previousDay.suggested - daySpent(previousDay)).toFixed(2));
     }
 
     function getTotals() {
@@ -236,31 +242,23 @@
       const remainingBudget = Math.max(0, TOTAL_BUDGET - spentBefore);
       const remainingDays = TOTAL_DAYS - index;
       if (remainingDays <= 0) return null;
+      if (remainingDays === 1) return remainingBudget;
+
+      const dayNumber = index + 1;
+      const targetToday = getMilestoneTarget(dayNumber);
+      const targetYesterday = getMilestoneTarget(dayNumber - 1);
+      const targetFreshToday = Math.max(0, targetToday - targetYesterday);
 
       const fairShare = remainingBudget / remainingDays;
-      const prevDay = index > 0 ? state.days[index - 1] : null;
-      const prevSpent = prevDay ? daySpent(prevDay) : 0;
-      const prevDiff = prevDay ? Number(((prevDay.suggested || 0) - prevSpent).toFixed(2)) : 0;
+      const anchor = Math.min(remainingBudget, Math.max(fairShare * 0.5, targetFreshToday));
+      const minBase = Math.max(0.5, anchor * 0.75);
+      const maxBase = Math.max(minBase, Math.min(remainingBudget, anchor * 1.2));
 
-      const bump = prevDiff > 0 ? prevDiff * 0.25 : 0;
-      const penalty = prevSpent > 0 ? prevSpent * 0.35 : 0;
-
-      const minBase = Math.max(0.5, fairShare * 0.7);
-      const maxBase = Math.max(minBase, fairShare * 1.05);
       const r = Math.random() ** 2;
-      const baseRoll = minBase + (maxBase - minBase) * r;
+      let freshRoll = minBase + (maxBase - minBase) * r;
+      freshRoll = Math.min(freshRoll, remainingBudget);
 
-      let suggestion = baseRoll + bump - penalty;
-
-      if (remainingDays === 1) {
-        suggestion = remainingBudget;
-      } else {
-        const floor = Math.max(0, fairShare * 0.2);
-        const ceiling = Math.min(remainingBudget, fairShare * 1.35 + bump);
-        suggestion = Math.min(Math.max(suggestion, floor), ceiling);
-      }
-
-      return Number(suggestion.toFixed(2));
+      return Number(freshRoll.toFixed(2));
     }
 
     function updateRollVisual(amount, rolling) {
@@ -284,27 +282,31 @@
       const day = currentDay();
       if (!day || day.suggested != null || isRolling) return;
 
-      const suggestion = calculateSuggestion(index);
-      if (suggestion == null) return;
+      const freshRoll = calculateSuggestion(index);
+      if (freshRoll == null) return;
+      const carryover = dayImpactFromPrevious(index);
+      const totalAvailable = Number((freshRoll + carryover).toFixed(2));
 
       isRolling = true;
       updateRollVisual(null, true);
       render();
 
       rollInterval = setInterval(() => {
-        const previewMin = Math.max(0, suggestion * 0.45);
-        const previewMax = Math.max(previewMin + 0.25, suggestion * 1.2);
+        const previewMin = Math.max(0, Math.abs(totalAvailable) * 0.45);
+        const previewMax = Math.max(previewMin + 0.25, Math.abs(totalAvailable) * 1.2);
         const preview = Number((previewMin + Math.random() * (previewMax - previewMin)).toFixed(2));
-        updateRollVisual(preview, true);
+        updateRollVisual(totalAvailable < 0 ? -preview : preview, true);
       }, 70);
 
       rollTimeout = setTimeout(() => {
         clearInterval(rollInterval);
         rollInterval = null;
-        state.days[index].suggested = suggestion;
+        state.days[index].freshRoll = freshRoll;
+        state.days[index].carryover = carryover;
+        state.days[index].suggested = totalAvailable;
         saveState();
         isRolling = false;
-        updateRollVisual(suggestion, false);
+        updateRollVisual(totalAvailable, false);
         render();
       }, 1100);
     }
@@ -327,43 +329,29 @@
       const day = currentDay();
       if (!day || day.suggested == null) return;
       day.locked = true;
-      state.currentIndex += 1;
+      state.currentIndex = state.currentIndex + 1;
       spendDraft = "";
       saveState();
       render();
     }
 
     function dayStatus(d) {
-      const diff = dayDiff(d);
-      if (diff == null) return "Pending";
+      if (typeof d.suggested !== "number") return "Pending";
+      const diff = d.suggested - daySpent(d);
       return diff >= 0 ? `+${currency(diff)}` : `-${currency(Math.abs(diff))}`;
     }
 
-    function renderImpact(day) {
-      const box = document.getElementById("impactBox");
-      const main = document.getElementById("impactMain");
-      const detail = document.getElementById("impactDetail");
-
-      if (!day || typeof day.suggested !== "number") {
+    function renderBreakdown(day) {
+      const box = document.getElementById("breakdownBox");
+      if (!day || day.suggested == null) {
         box.style.display = "none";
         return;
       }
-
-      const diff = dayDiff(day);
-      const bump = diff > 0 ? diff * 0.25 : 0;
-      const penalty = daySpent(day) > 0 ? daySpent(day) * 0.35 : 0;
-      const net = Number((bump - penalty).toFixed(2));
-
       box.style.display = "block";
-      box.className = `impact-box ${net >= 0 ? "positive" : "negative"}`;
-
-      main.textContent = net >= 0
-        ? `${currency(net)} expected bump for tomorrow.`
-        : `${currency(Math.abs(net))} expected reduction for tomorrow.`;
-
-      detail.textContent = net >= 0
-        ? `Small bonus from underspending, while still keeping the budget on pace for Day 14.`
-        : `Tomorrow gets trimmed because you spent money today, so the total still runs out by Day 14.`;
+      document.getElementById("freshRollText").textContent = currency(day.freshRoll || 0);
+      const carry = day.carryover || 0;
+      document.getElementById("carryoverText").textContent = `${carry >= 0 ? "+" : "-"}${currency(Math.abs(carry))}`;
+      document.getElementById("totalAvailableText").textContent = currency(day.suggested);
     }
 
     function renderEntries(day) {
@@ -386,41 +374,29 @@
     function renderHistory() {
       const historyList = document.getElementById("historyList");
       historyList.innerHTML = "";
-      state.days.forEach((d, index) => {
-        const prevImpact = index > 0 ? dayImpactFromPrevious(index) : null;
-        const prevSpent = index > 0 ? daySpent(state.days[index - 1]) : 0;
-        const bump = prevImpact != null && prevImpact > 0 ? prevImpact * 0.25 : 0;
-        const penalty = prevSpent > 0 ? prevSpent * 0.35 : 0;
-        const badgeValue = index === 0 ? null : Number((bump - penalty).toFixed(2));
-
+      state.days.forEach((d) => {
         const item = document.createElement("div");
         item.className = "history-item";
-
-        const left = document.createElement("div");
-        left.className = "history-left";
-
-        if (badgeValue != null) {
-          const badge = document.createElement("div");
-          badge.className = `impact-badge ${badgeValue >= 0 ? "positive" : "negative"}`;
-          badge.textContent = `${badgeValue >= 0 ? "+" : "-"}${currency(Math.abs(badgeValue))}`;
-          left.appendChild(badge);
-        }
-
-        const textWrap = document.createElement("div");
-        textWrap.innerHTML = `
-          <div class="history-day">Day ${d.day}</div>
-          <div class="history-sub">${d.suggested == null ? "No number yet" : `Max ${currency(d.suggested)} • ${d.entries.length} entries`}</div>
+        item.innerHTML = `
+          <div class="history-top">
+            <div class="history-day">Day ${d.day}</div>
+            <div class="history-total">${d.suggested == null ? "—" : currency(d.suggested)}</div>
+          </div>
+          <div class="history-subgrid">
+            <div class="history-chip">
+              <div class="history-chip-label">Roll</div>
+              <div class="history-chip-value">${d.freshRoll == null ? "—" : currency(d.freshRoll)}</div>
+            </div>
+            <div class="history-chip">
+              <div class="history-chip-label">Carryover</div>
+              <div class="history-chip-value">${d.suggested == null ? "—" : `${d.carryover >= 0 ? "+" : "-"}${currency(Math.abs(d.carryover))}`}</div>
+            </div>
+            <div class="history-chip">
+              <div class="history-chip-label">Spent</div>
+              <div class="history-chip-value">${d.entries.length === 0 ? "—" : currency(daySpent(d))}</div>
+            </div>
+          </div>
         `;
-        left.appendChild(textWrap);
-
-        const right = document.createElement("div");
-        right.innerHTML = `
-          <div class="history-spent">${d.entries.length === 0 ? "—" : currency(daySpent(d))}</div>
-          <div class="history-diff">${dayStatus(d)}</div>
-        `;
-
-        item.appendChild(left);
-        item.appendChild(right);
         historyList.appendChild(item);
       });
     }
@@ -428,12 +404,15 @@
     function render() {
       const totals = getTotals();
       const day = currentDay();
+      const todayNumber = state.currentIndex + 1;
+      const target = todayNumber <= TOTAL_DAYS ? getMilestoneTarget(Math.min(todayNumber, 12)) : 100;
 
       document.getElementById("todayDate").textContent = todayKey();
       document.getElementById("remaining").textContent = currency(totals.remaining);
       document.getElementById("daysLeft").textContent = totals.daysLeft;
       document.getElementById("spentSoFar").textContent = currency(totals.spentSoFar);
       document.getElementById("historyCount").textContent = `${totals.completedDays}/${TOTAL_DAYS}`;
+      document.getElementById("targetText").textContent = currency(target);
 
       document.getElementById("todayDay").textContent = day ? `Day ${day.day}` : "Finished";
 
@@ -450,7 +429,7 @@
         randomizeBtn.disabled = isRolling || day.suggested != null;
         randomizeBtn.textContent = day.suggested == null ? "Randomize" : "Rolled";
         if (!isRolling) updateRollVisual(day.suggested, false);
-        renderImpact(day);
+        renderBreakdown(day);
         renderEntries(day);
       } else {
         input.disabled = true;
@@ -461,7 +440,7 @@
         document.getElementById("suggestedAmount").textContent = "—";
         document.getElementById("rollStatus").textContent = "All 14 days are complete.";
         document.getElementById("entryBox").style.display = "none";
-        document.getElementById("impactBox").style.display = "none";
+        document.getElementById("breakdownBox").style.display = "none";
       }
 
       renderHistory();
