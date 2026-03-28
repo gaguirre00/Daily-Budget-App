@@ -14,17 +14,17 @@
       --soft: #f8fafc;
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--dark); }
+    body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background: var(--bg); color: var(--dark); }
     .app { max-width: 430px; margin: 0 auto; min-height: 100vh; padding: 16px; }
-    .card { background: var(--card); border-radius: 28px; padding: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08); border: 1px solid var(--line); margin-bottom: 16px; }
-    .hero { background: var(--dark); color: white; border: none; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18); }
-    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; color: #cbd5e1; }
-    h1, h2, p { margin: 0; }
+    .card { background: var(--card); border-radius: 28px; padding: 20px; box-shadow: 0 1px 2px rgba(15,23,42,.08); border: 1px solid var(--line); margin-bottom: 16px; }
+    .hero { background: var(--dark); color: white; border: none; box-shadow: 0 12px 24px rgba(15,23,42,.18); }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .2em; color: #cbd5e1; }
+    h1,h2,p { margin: 0; }
     h1 { margin-top: 8px; font-size: 28px; line-height: 1.1; }
     .subtext { margin-top: 10px; font-size: 14px; color: #cbd5e1; line-height: 1.4; }
-    .date-chip { margin-top: 14px; display: inline-block; background: rgba(255,255,255,0.12); color: white; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+    .date-chip { margin-top: 14px; display: inline-block; background: rgba(255,255,255,.12); color: white; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; }
     .stats { margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .stat { background: rgba(255,255,255,0.1); border-radius: 20px; padding: 14px; }
+    .stat { background: rgba(255,255,255,.1); border-radius: 20px; padding: 14px; }
     .stat-label { font-size: 12px; color: #cbd5e1; }
     .stat-value { margin-top: 4px; font-size: 28px; font-weight: 700; }
     .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -33,40 +33,32 @@
     button { border: none; border-radius: 18px; padding: 12px 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
     .primary { background: var(--dark); color: white; }
     .secondary { background: white; color: #334155; border: 1px solid #cbd5e1; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
     .amount-box { margin-top: 18px; background: var(--soft); border-radius: 24px; padding: 18px; text-align: center; }
     .amount-label { font-size: 14px; color: var(--muted); }
-    .amount { margin-top: 8px; font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; transition: transform 120ms ease; min-height: 56px; }
+    .amount { margin-top: 8px; font-size: 56px; line-height: 1; font-weight: 800; letter-spacing: -.04em; transition: transform 120ms ease; min-height: 56px; }
     .amount.rolling { transform: scale(1.05); }
     .helper { margin-top: 10px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.4; }
-    .breakdown-box { margin-top: 12px; padding: 12px; border-radius: 18px; background: var(--soft); }
-    .history-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    .history-total { font-size: 15px; font-weight: 700; text-align: right; }
-    .history-subgrid { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-    .history-chip { border-radius: 14px; padding: 8px 10px; background: white; }
-    .history-chip-label { font-size: 11px; color: var(--muted); }
-    .history-chip-value { margin-top: 2px; font-size: 13px; font-weight: 700; }
-    .entry-box { margin-top: 12px; padding: 12px; background: var(--soft); border-radius: 18px; }
-    .entry-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-top: 6px; }
+    .breakdown-box,.entry-box { margin-top: 12px; padding: 12px; border-radius: 18px; background: var(--soft); }
+    .mini-label { font-size: 12px; color: var(--muted); }
+    .entry-row,.break-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-top: 6px; }
     label { display: block; margin-top: 18px; font-size: 14px; color: var(--muted); }
     input { width: 100%; margin-top: 8px; padding: 16px; border-radius: 18px; border: 1px solid #cbd5e1; font-size: 18px; background: white; }
     .submit-btn { margin-top: 12px; width: 100%; }
     .grid-two { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .mini-box { background: var(--soft); border-radius: 20px; padding: 14px; }
-    .mini-label { font-size: 12px; color: var(--muted); }
     .mini-value { margin-top: 4px; font-size: 24px; font-weight: 700; }
     .history-header { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
     .history-count { font-size: 14px; color: var(--muted); }
     .history-list { display: grid; gap: 8px; }
-    .history-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--soft); border-radius: 18px; padding: 14px 16px; }
-    .history-left { display: flex; align-items: center; gap: 10px; }
+    .history-item { background: var(--soft); border-radius: 18px; padding: 14px 16px; }
+    .history-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
     .history-day { font-size: 15px; font-weight: 600; }
-    .history-sub { margin-top: 2px; font-size: 12px; color: var(--muted); }
-    .history-spent { font-size: 15px; font-weight: 700; text-align: right; }
-    .history-diff { margin-top: 2px; font-size: 12px; color: var(--muted); text-align: right; }
-    .impact-badge { min-width: 64px; border-radius: 12px; padding: 6px 8px; text-align: center; font-size: 12px; font-weight: 700; }
-    .impact-badge.positive { background: #d1fae5; color: #047857; }
-    .impact-badge.negative { background: #ffe4e6; color: #be123c; }
+    .history-total { font-size: 15px; font-weight: 700; text-align: right; }
+    .history-subgrid { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .history-chip { border-radius: 14px; padding: 8px 10px; background: white; }
+    .history-chip-label { font-size: 11px; color: var(--muted); }
+    .history-chip-value { margin-top: 2px; font-size: 13px; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -74,17 +66,11 @@
     <section class="card hero">
       <div class="eyebrow">14-day budget</div>
       <h1>Budget Randomizer</h1>
-      <p class="subtext">Fresh random roll every day, plus separate carryover from yesterday. Guided to around $50 by Day 7 and near $100 by Day 11–12.</p>
+      <p class="subtext">Fresh random roll every day, plus separate carryover from yesterday. Guided toward about $50 by Day 7 and near $100 by Day 11–12.</p>
       <div class="date-chip" id="todayDate">Today</div>
       <div class="stats">
-        <div class="stat">
-          <div class="stat-label">Remaining</div>
-          <div class="stat-value" id="remaining">$100.00</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">Days left</div>
-          <div class="stat-value" id="daysLeft">14</div>
-        </div>
+        <div class="stat"><div class="stat-label">Remaining</div><div class="stat-value" id="remaining">$100.00</div></div>
+        <div class="stat"><div class="stat-label">Days left</div><div class="stat-value" id="daysLeft">14</div></div>
       </div>
     </section>
 
@@ -105,9 +91,9 @@
 
       <div class="breakdown-box" id="breakdownBox" style="display:none;">
         <div class="mini-label">Today breakdown</div>
-        <div class="entry-row"><span>Fresh roll</span><strong id="freshRollText">$0.00</strong></div>
-        <div class="entry-row"><span>Carryover from yesterday</span><strong id="carryoverText">$0.00</strong></div>
-        <div class="entry-row"><span>Total available</span><strong id="totalAvailableText">$0.00</strong></div>
+        <div class="break-row"><span>Fresh roll</span><strong id="freshRollText">$0.00</strong></div>
+        <div class="break-row"><span>Carryover from yesterday</span><strong id="carryoverText">$0.00</strong></div>
+        <div class="break-row"><span>Total available</span><strong id="totalAvailableText">$0.00</strong></div>
       </div>
 
       <label for="actualSpent">Add a purchase for this day</label>
@@ -115,21 +101,15 @@
       <button class="primary submit-btn" id="submitSpentBtn">Add $ entry</button>
 
       <div class="entry-box" id="entryBox" style="display:none;">
-        <div class="mini-label">Today’s entries</div>
+        <div class="mini-label">Today's entries</div>
         <div id="entriesList"></div>
       </div>
 
       <button class="secondary submit-btn" id="finishDayBtn">Finish day and move on</button>
 
       <div class="grid-two">
-        <div class="mini-box">
-          <div class="mini-label">Spent so far</div>
-          <div class="mini-value" id="spentSoFar">$0.00</div>
-        </div>
-        <div class="mini-box">
-          <div class="mini-label">Progress target</div>
-          <div class="mini-value" id="targetText">$0.00</div>
-        </div>
+        <div class="mini-box"><div class="mini-label">Spent so far</div><div class="mini-value" id="spentSoFar">$0.00</div></div>
+        <div class="mini-box"><div class="mini-label">Progress target</div><div class="mini-value" id="targetText">$0.00</div></div>
       </div>
 
       <button class="secondary submit-btn" id="resetBtn">Reset all</button>
@@ -147,7 +127,7 @@
   <script>
     const TOTAL_BUDGET = 100;
     const TOTAL_DAYS = 14;
-    const STORAGE_KEY = "budget-randomizer-v12";
+    const STORAGE_KEY = "budget-randomizer-v13";
 
     function createInitialState() {
       return {
@@ -165,12 +145,7 @@
 
     function todayKey() {
       const now = new Date();
-      return now.toLocaleDateString(undefined, {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      });
+      return now.toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric", year:"numeric" });
     }
 
     function currency(n) {
@@ -216,11 +191,16 @@
       return day.entries.reduce((sum, entry) => sum + entry, 0);
     }
 
-    function dayImpactFromPrevious(index) {
-      if (index <= 0) return null;
-      const previousDay = state.days[index - 1];
-      if (!previousDay || typeof previousDay.suggested !== "number") return null;
-      return Number((previousDay.suggested - daySpent(previousDay)).toFixed(2));
+    function dayDiff(day) {
+      if (!day || typeof day.suggested !== "number") return 0;
+      return Number((day.suggested - daySpent(day)).toFixed(2));
+    }
+
+    function getMilestoneTarget(dayNumber) {
+      if (dayNumber <= 0) return 0;
+      if (dayNumber <= 7) return (50 / 7) * dayNumber;
+      if (dayNumber <= 11) return 50 + ((100 - 50) / 4) * (dayNumber - 7);
+      return 100;
     }
 
     function getTotals() {
@@ -237,7 +217,12 @@
       return state.currentIndex < TOTAL_DAYS ? state.days[state.currentIndex] : null;
     }
 
-    function calculateSuggestion(index) {
+    function carryoverForDay(index) {
+      if (index <= 0) return 0;
+      return dayDiff(state.days[index - 1]);
+    }
+
+    function calculateFreshRoll(index) {
       const spentBefore = state.days.slice(0, index).reduce((sum, d) => sum + daySpent(d), 0);
       const remainingBudget = Math.max(0, TOTAL_BUDGET - spentBefore);
       const remainingDays = TOTAL_DAYS - index;
@@ -282,9 +267,9 @@
       const day = currentDay();
       if (!day || day.suggested != null || isRolling) return;
 
-      const freshRoll = calculateSuggestion(index);
+      const freshRoll = calculateFreshRoll(index);
       if (freshRoll == null) return;
-      const carryover = dayImpactFromPrevious(index);
+      const carryover = carryoverForDay(index);
       const totalAvailable = Number((freshRoll + carryover).toFixed(2));
 
       isRolling = true;
@@ -329,16 +314,10 @@
       const day = currentDay();
       if (!day || day.suggested == null) return;
       day.locked = true;
-      state.currentIndex = state.currentIndex + 1;
+      state.currentIndex += 1;
       spendDraft = "";
       saveState();
       render();
-    }
-
-    function dayStatus(d) {
-      if (typeof d.suggested !== "number") return "Pending";
-      const diff = d.suggested - daySpent(d);
-      return diff >= 0 ? `+${currency(diff)}` : `-${currency(Math.abs(diff))}`;
     }
 
     function renderBreakdown(day) {
@@ -412,9 +391,8 @@
       document.getElementById("daysLeft").textContent = totals.daysLeft;
       document.getElementById("spentSoFar").textContent = currency(totals.spentSoFar);
       document.getElementById("historyCount").textContent = `${totals.completedDays}/${TOTAL_DAYS}`;
-      document.getElementById("targetText").textContent = currency(target);
-
       document.getElementById("todayDay").textContent = day ? `Day ${day.day}` : "Finished";
+      document.getElementById("targetText").textContent = currency(target);
 
       const input = document.getElementById("actualSpent");
       const addBtn = document.getElementById("submitSpentBtn");
