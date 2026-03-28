@@ -66,7 +66,7 @@
     <section class="card hero">
       <div class="eyebrow">14-day budget</div>
       <h1>Budget Randomizer</h1>
-      <p class="subtext">Fresh random roll every day, plus separate carryover from yesterday. Guided toward about $50 by Day 7 and near $100 by Day 11–12.</p>
+      <p class="subtext">Fresh daily roll centered around $7–$9, plus separate carryover from yesterday. Guided toward about $50 by Day 7 and near $100 by Day 11–12.</p>
       <div class="date-chip" id="todayDate">Today</div>
       <div class="stats">
         <div class="stat"><div class="stat-label">Remaining</div><div class="stat-value" id="remaining">$100.00</div></div>
@@ -127,7 +127,7 @@
   <script>
     const TOTAL_BUDGET = 100;
     const TOTAL_DAYS = 14;
-    const STORAGE_KEY = "budget-randomizer-v13";
+    const STORAGE_KEY = "budget-randomizer-v14";
 
     function createInitialState() {
       return {
@@ -234,15 +234,21 @@
       const targetYesterday = getMilestoneTarget(dayNumber - 1);
       const targetFreshToday = Math.max(0, targetToday - targetYesterday);
 
-      const fairShare = remainingBudget / remainingDays;
-      const anchor = Math.min(remainingBudget, Math.max(fairShare * 0.5, targetFreshToday));
-      const minBase = Math.max(0.5, anchor * 0.75);
-      const maxBase = Math.max(minBase, Math.min(remainingBudget, anchor * 1.2));
+      const desiredCenter = Math.max(7, Math.min(9, targetFreshToday));
+      const minBase = Math.max(5.5, desiredCenter - 1.5);
+      const maxBase = Math.min(10.5, desiredCenter + 1.5);
 
-      const r = Math.random() ** 2;
-      let freshRoll = minBase + (maxBase - minBase) * r;
+      const weightedMin = Math.max(0.5, Math.min(minBase, remainingBudget));
+      const weightedMax = Math.max(weightedMin, Math.min(maxBase, remainingBudget));
+
+      const r = Math.random() ** 1.2;
+      let freshRoll = weightedMin + (weightedMax - weightedMin) * r;
+
+      if (remainingBudget / remainingDays < 7) {
+        freshRoll = Math.min(freshRoll, Math.max(remainingBudget / remainingDays, weightedMin));
+      }
+
       freshRoll = Math.min(freshRoll, remainingBudget);
-
       return Number(freshRoll.toFixed(2));
     }
 
