@@ -127,7 +127,7 @@
   <script>
     const TOTAL_BUDGET = 100;
     const TOTAL_DAYS = 14;
-    const STORAGE_KEY = "budget-randomizer-v14";
+    const STORAGE_KEY = "budget-randomizer-v15";
 
     function createInitialState() {
       return {
@@ -319,6 +319,9 @@
     function finishDay() {
       const day = currentDay();
       if (!day || day.suggested == null) return;
+      if (day.entries.length === 0) {
+        day.entries.push(0);
+      }
       day.locked = true;
       state.currentIndex += 1;
       spendDraft = "";
